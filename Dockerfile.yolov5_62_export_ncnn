@@ -1,0 +1,34 @@
+FROM ubuntu:20.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+SHELL ["/bin/bash", "-c"]
+
+RUN apt-get update && apt-get install -y \
+    python3-pip python3-venv \
+    libgl1 libglib2.0-0 \
+    software-properties-common lsb-release wget git \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | \
+    gpg --dearmor - | \
+    tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
+
+RUN apt-add-repository "deb https://apt.kitware.com/ubuntu/ $(lsb_release -c -s) main"
+RUN apt-get update && apt-get install -y \
+    cmake \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git clone https://github.com/shaoshengsong/yolov5_62_export_ncnn
+WORKDIR /yolov5_62_export_ncnn
+
+RUN pip install -U pip
+RUN pip install numpy==1.23.5 opencv-python
+RUN pip install -r requirements.txt
+RUN pip install onnx onnxruntime onnx-simplifier
+
+
+# git clone https://github.com/Tencent/ncnn
+cmake -DCMAKE_BUILD_TYPE=Release -DNCNN_VULKAN=OFF -DNCNN_SYSTEM_GLSLANG=ON -DNCNN_BUILD_EXAMPLES=ON ..
