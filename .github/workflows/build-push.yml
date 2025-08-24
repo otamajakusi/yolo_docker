@@ -1,0 +1,81 @@
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  yolov5_62_export_ncnn:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        run: |
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" \
+            | docker login -u "${{ vars.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Build & Push
+        run: |
+          IMAGE=${{ vars.DOCKERHUB_USERNAME }}/yolov5_62_export_ncnn:${{ github.sha }}
+          DOCKER_FILE=Dockerfile.yolov5_62_export_ncnn
+          docker build -t "$IMAGE" -f "$DOCKER_FILE" .
+          docker push "$IMAGE"
+
+  ncnn:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        run: |
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" \
+            | docker login -u "${{ vars.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Build & Push
+        run: |
+          IMAGE=${{ vars.DOCKERHUB_USERNAME }}/ncnn:${{ github.sha }}
+          DOCKER_FILE=Dockerfile.ncnn
+          docker build -t "$IMAGE" -f "$DOCKER_FILE" .
+          docker push "$IMAGE"
+
+  yolov5_jetson:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        run: |
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" \
+            | docker login -u "${{ vars.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Build and Push (arm64)
+        run: |
+          IMAGE=${{ vars.DOCKERHUB_USERNAME }}/yolov5_jetson:${{ github.sha }}
+          DOCKER_FILE=Dockerfile.yolov5_jetson
+          docker buildx build --platform linux/arm64 -t "$IMAGE" -f "$DOCKER_FILE" --push .
+
+  yolo11_export_ncnn:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        run: |
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" \
+            | docker login -u "${{ vars.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Build & Push
+        run: |
+          IMAGE=${{ vars.DOCKERHUB_USERNAME }}/yolo11_export_ncnn:${{ github.sha }}
+          DOCKER_FILE=Dockerfile.yolo11_export_ncnn
+          docker build -t "$IMAGE" -f "$DOCKER_FILE" .
+          docker push "$IMAGE"
